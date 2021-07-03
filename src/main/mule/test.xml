@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="88fe1b94-e97f-440d-b567-bdbc02d17fcc" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="d11edcc1-ce53-4045-9a50-148801abdbb3" />
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="b7508b69-bd31-4879-bc93-ce0702a1a981" >
+		<os:private-object-store entryTtl="1" entryTtlUnit="MINUTES" expirationInterval="30" expirationIntervalUnit="SECONDS" config-ref="ObjectStore_Config" />
+	</ee:object-store-caching-strategy>
+	<flow name="testFlow" doc:id="c17d8889-9a96-4a9b-bc34-373528641cec" >
+		<http:listener doc:name="Listener" doc:id="0dc5fcc5-49ae-400b-b492-40bee08cbfd8" config-ref="HTTP_Listener_config" path="/test"/>
+		<ee:cache doc:name="Cache" doc:id="82b9bd10-db16-41ce-91f8-349e3d32dd87" cachingStrategy-ref="Caching_Strategy">
+			<os:store doc:name="Store" doc:id="2d3abc55-9635-48d8-b16f-be943342bc56" key="access_token">
+				<os:value><![CDATA[#["1234567890"]]]></os:value>
+			</os:store>
+			<os:retrieve doc:name="Retrieve" doc:id="b9aaa4d0-9b87-4003-a094-1b12b4ef7716" key="access_token">
+				<os:default-value ><![CDATA[#[null]]]></os:default-value>
+			</os:retrieve>
+			<logger level="INFO" doc:name="Logger" doc:id="50c255c8-34d8-410a-8804-13e9af85c954" message="value is: #[payload]"/>
+		</ee:cache>
+		<logger level="INFO" doc:name="Logger" doc:id="1dc5d414-e30b-4d86-b633-59bd6e71540e" message="outside cache scope: #[payload]"/>
+	</flow>
+</mule>

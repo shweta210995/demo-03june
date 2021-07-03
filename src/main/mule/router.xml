@@ -1,0 +1,92 @@
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+  xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+  xmlns="http://www.mulesoft.org/schema/mule/core"  xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                            http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+                            http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+                            http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd
+                            http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+  <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="56ab3c43-1f4e-4779-bc05-f311179d4caa" >
+    <http:request-connection >
+      <http:client-socket-properties >
+        <sockets:tcp-client-socket-properties connectionTimeout="500" clientTimeout="500" />
+      </http:client-socket-properties>
+    </http:request-connection>
+  </http:request-config>
+  <file:config name="File_Config" doc:name="File Config" doc:id="96e0d3bd-0d38-4bab-888c-760dd6145595" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="fb8e5a22-2681-4b64-ad8f-1a87fcba2a7b" >
+		<db:my-sql-connection host="db4free.net" port="3306" user="shweta2109" password="Shweta@210995" database="lazyfashions123"/>
+	</db:config>
+	<flow name="testFlow1" doc:id="15a34f00-6b52-4ef4-a216-347500ccfe79" initialState="stopped">
+    <scheduler doc:name="Scheduler" doc:id="29085165-a572-4f87-991d-13e1a9ce2ef9" >
+      <scheduling-strategy >
+        <fixed-frequency frequency="1" timeUnit="MINUTES"/>
+      </scheduling-strategy>
+    </scheduler>
+    <first-successful doc:name="First Successful" doc:id="9907ee00-329c-4f06-a6a1-8632fab4dd51" >
+      <route>
+        <file:read doc:name="Read non existent file" doc:id="0d36a1e3-1fc7-49ef-96c2-6e9d1a1c0072" path="nonExistentFile" config-ref="File_Config"/>
+				<set-variable value="1" doc:name="Set successfulRoute var to route 1" doc:id="855857f6-db90-41e5-9765-3a3dcabeb5a3" variableName="successfulRoute"/>
+				<ee:transform doc:name="Transform Message" doc:id="b93fff9f-c835-47de-9162-645b157c2d3d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"route1"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+      
+</route>
+      <route>
+        <set-payload value="#[vars.nonExistentVar!]" doc:name="Set Payload with non existent variable" doc:id="46839e2e-c905-4943-80e2-1bd0f249d580" />
+        <set-variable value="2" doc:name="Set successfulRoute var to route 2" doc:id="e90db25a-48c5-4cfd-b19b-b4848718e32c" variableName="successfulRoute" />
+				<ee:transform doc:name="Transform Message" doc:id="5ed90480-429b-4a6e-83bf-ae3ef8015b97" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"route2"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+      
+</route>
+      <route>
+				<set-payload value="#[vars.nonExistentVar!]" doc:name="Copy_of_Set Payload with non existent variable" doc:id="7f8e7e26-150f-4346-9a7c-24115269e813" />
+				<ee:transform doc:name="Transform Message" doc:id="97b3d1fa-1412-4457-a456-9014ca2c404d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"route3"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+      
+</route>
+    
+</first-successful>
+    <logger level="ERROR" doc:name="Logger" doc:id="9b6f818d-7351-4bbb-8231-80702e648ad5" message="#['Successful route was $(vars.successfulRoute)']"/>
+		<logger level="INFO" doc:name="Logger" doc:id="8f551288-aa52-43af-9620-d4671ddf4e63" message="#[%dw 2.0
+output application/json
+---
+payload]"/>
+  
+</flow>
+	<!-- <flow name="routerFlow" doc:id="959adc40-3720-4a12-89d1-e8987aebed10" >
+		<http:listener doc:name="Listener" doc:id="8f7e1709-0bc5-469d-af1b-0202461d5724" config-ref="HTTP_Listener_config" path="/db"/>
+		<db:select doc:name="Select" doc:id="6d3cbb9b-b7a5-4f3b-a632-548d4817ce20" >
+			<db:sql ><![CDATA[select * from customer]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="b7357ad7-f783-4dad-8e25-0a0852617cb7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+-&#45;&#45;
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:bulk-insert doc:name="Bulk insert" doc:id="ad78bccd-2837-478b-adcb-0d80a94f2219" config-ref="Database_Config"/>
+	</flow> -->
+
+</mule>
